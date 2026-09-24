@@ -1,0 +1,3 @@
+#ifndef XPLATFORM_INFO_H
+#define XPLATFORM_INFO_H
+#endif /* XPLATFORM_INFO_H */

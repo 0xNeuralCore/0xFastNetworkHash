@@ -1,0 +1,10 @@
+#ifndef XSTATUS_H
+#define XSTATUS_H
+
+#define XST_SUCCESS 0
+#define XST_FAILURE 1
+#define XST_DEVICE_BUSY 2
+#define XST_DEVICE_IS_STARTED 3
+#define XIL_COMPONENT_IS_READY 0x11111111U
+
+#endif /* XSTATUS_H */
