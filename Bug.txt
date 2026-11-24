@@ -1,0 +1,15 @@
+Je suppose que tu es sur un Zynq UltraScale+ (BL31 + U-Boot Xilinx). En mode JTAG, U-Boot n'essaie pas de booter sur la QSPI : sa cible de boot "jtag" fait seulement source ${scriptaddr}. Il faut donc lui fournir le script en RAM, ou le détourner.
+Option 1 : charger le script via Trace32
+Charge ton boot.scr (avec en-tête mkimage) à l'adresse scriptaddr.
+Pour la connaître, dans U-Boot : printenv scriptaddr.
+Dans Trace32 : Data.LOAD.Binary boot.scr <scriptaddr>.
+Relance ensuite run bootcmd, ou laisse U-Boot enchaîner.
+Option 2 : lancer le boot QSPI à la main (le plus rapide pour tester)
+Dans la console U-Boot :
+printenv boot_targets
+setenv boot_targets qspi0
+run bootcmd
+Ou directement run bootcmd_qspi0. Sinon, fais le boot à la main : sf probe; sf read <addr_image> <offset> <taille>; booti ....
+Option 3 : faire croire à U-Boot qu'il est en boot QSPI
+Avant de lancer U-Boot, depuis Trace32, écris dans CRL_APB.BOOT_MODE_USER (0xFF5E0200) : bit 8 à 1 (utiliser le mode alternatif) et le mode QSPI dans les bits [3:0]. U-Boot lira alors ce mode et choisira qspi0 comme cible de boot. Vérifie les valeurs exactes dans le TRM de ta puce.
+Pour t'aider plus précisément, donne-moi la sortie de printenv boot_targets et printenv bootcmd, et dis-moi si ta cible est bien un ZynqMP.
