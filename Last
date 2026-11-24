@@ -1,0 +1,11 @@
+Oui, c'est le plus simple. Le texte est stocké en clair dans le .scr, juste après l'en-tête.
+1. Extraire le contenu
+dd if=boot.scr of=boot.cmd bs=1 skip=72
+Ou, plus propre, avec l'outil fourni par u-boot-tools :
+dumpimage -T script -p 0 -o boot.cmd boot.scr
+2. Vérifier et modifier
+cat boot.cmd
+nano boot.cmd
+3. Recompiler
+mkimage -C none -A arm -T script -n "boot script" -d boot.cmd boot.scr.new
+Utilisez la même architecture (-A) que l'original, que vous voyez avec mkimage -l boot.scr. mkimage recalcule lui-même les CRC et la taille, donc le script Python n'est utile que si vous voulez conserver à l'identique l'en-tête d'origine (nom, horodatage).
