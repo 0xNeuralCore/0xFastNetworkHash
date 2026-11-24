@@ -1,0 +1,32 @@
+Ça explique tout : en mode QSPI, le script est lu depuis la flash (ou une adresse définie pour ce mode), alors qu'en JTAG U-Boot va le chercher à scriptaddr en RAM. Si ces deux adresses diffèrent, tu chargeais au mauvais endroit.
+Deux façons de régler ça :
+Charger là où U-Boot regarde. Relève l'adresse exacte utilisée par le script JTAG (printenv bootcmd_jtag ou printenv scriptaddr), puis dans Trace32 :
+Data.LOAD.Binary boot.scr A:<adresse_vue_dans_le_script>
+Vérifie ensuite avec md <adresse> 8 (tu dois voir 27 05 19 56) et iminfo <adresse>, puis source <adresse>.
+Modifier la variable côté U-Boot pour la faire coïncider avec l'adresse où tu charges déjà :
+setenv scriptaddr <adresse_de_ton_load>
+run bootcmd_jtag
+Ou directement source <adresse_de_ton_load>.
+Attention à deux points :
+L'adresse doit être dans la DDR, et ne pas chevaucher l'image, le DTB ou l'initramfs que le script va charger ensuite.
+Si le script lui-même contient des adresses codées en dur (ex. sf read 0x... ), vérifie qu'elles sont cohérentes avec ce qui marche à la main en mode QSPI.
+Quelle adresse vois-tu dans le script, et quelle est la valeur de scriptaddr dans U-Boot ?
+
+
+Ça confirme le principe du mode JTAG : le script ne lit rien dans la QSPI, il suppose que tout est déjà en RAM et fait directement booti <kernel> <initrd> <dtb> avec des adresses fixes. Si tu ne charges que le script, booti pointe sur de la RAM vide, d'où le "ça boot pas".
+Option A : tout charger via Trace32 (adresses à relever dans le script JTAG ou avec printenv kernel_addr ramdisk_addr fdt_addr)
+Data.LOAD.Binary Image A:<kernel_addr>
+Data.LOAD.Binary system.dtb A:<fdt_addr>
+Data.LOAD.Binary rootfs.cpio.gz.u-boot A:<ramdisk_addr>
+Ensuite, source du script. C'est lent en JTAG pour un gros rootfs.
+Option B : adapter le script pour lire depuis la QSPI (le plus simple dans ton cas)
+Comme run bootcmd_qspi0 marche déjà, reprends ses commandes dans ton boot.cmd JTAG :
+sf probe 0
+sf read <kernel_addr> <offset_kernel> <taille>
+sf read <fdt_addr> <offset_dtb> <taille>
+booti <kernel_addr> - <fdt_addr>
+Pour retrouver les offsets et adresses exacts, fais printenv bootcmd_qspi0 (et printenv qspiboot selon ton U-Boot) et recopie.
+Option C : le plus court
+Mets juste run bootcmd_qspi0 dans le boot.cmd et charge-le à scriptaddr.
+Vérifie que les adresses ne se chevauchent pas (kernel, dtb, initrd, et zone du script) et que la taille lue correspond à ce qui est réellement en flash.
+Que contient bootcmd_qspi0 chez toi ? Je pourrai t'écrire le boot.cmd complet.
