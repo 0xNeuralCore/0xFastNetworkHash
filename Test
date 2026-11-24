@@ -1,0 +1,9 @@
+"SCRIPT FAILED" veut dire que U-Boot n'a pas trouvé de script valide à scriptaddr. Donc soit rien n'a été écrit au bon endroit, soit le fichier n'a pas le bon format.
+Vérifie dans cet ordre, dans la console U-Boot :
+printenv scriptaddr
+md ${scriptaddr} 8
+iminfo ${scriptaddr}
+md affiche des zéros ou n'importe quoi : le Data.LOAD n'a pas atteint la RAM à cette adresse. Recharge avec Data.LOAD.Binary boot.scr A:<scriptaddr> en prenant la valeur exacte de printenv scriptaddr, puis refais md.
+md affiche 27 05 19 56 en début de données (magic uImage 0x27051956) : le fichier est bien là. Dans ce cas, iminfo te dira si le type est faux ou le checksum mauvais.
+Pas de 27 05 19 56 : le fichier n'est pas passé par mkimage. Régénère-le :
+mkimage -A arm64 -T script -C none -n boot -d boot.cmd boot.scr
